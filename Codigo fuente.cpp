@@ -9,6 +9,7 @@
 #include <allegro5/allegro_native_dialog.h>
 #include <allegro5/allegro_primitives.h>
 #include <allegro5/allegro_image.h>
+#include <algorithm>
 
 #define FPS 60.0
 #define FPS2 30.0
@@ -76,20 +77,23 @@ int main()
 		if (nave_x < 0)
 			izquierda = false;
 		if (derecha)
-			nave_x += 2;
+			nave_x += 2.5;
 		if (izquierda)
-			nave_x -= 2;
+			nave_x -= 2.5;
 
 		ball_x += ball_dx;
 		ball_y += ball_dy;
 
+		if (ball_x <= ball_radius + 0 || ball_x >= 720 - ball_radius)
+			ball_dx *= -0.8;
+		if (ball_y <= ball_radius + 0 || ball_y >= 480 - ball_radius)
+			ball_dy *= -0.8;
 
-		if (ball_x - ball_radius < 0 || ball_x + ball_radius > 720) {
-			ball_dx *= -0.9; // Rebotar en X
-		}
-		if (ball_y - ball_radius < 0) {
-			ball_dy *= -0.9; // Rebotar en Y
-		}
+		ball_x = min(ball_x, 720 - ball_radius);
+		ball_x = max(ball_x, ball_radius);
+		ball_y = min(ball_y, 480 - ball_radius);
+		ball_y = max(ball_y, ball_radius);
+
 		if (ball_y + ball_radius >= nave_y && ball_y - ball_radius <= nave_y + nave_height &&
 			ball_x + ball_radius >= nave_x && ball_x - ball_radius <= nave_x + nave_width) {
 			ball_dy *= -1; // Rebotar en Y
@@ -137,5 +141,7 @@ int main()
 	al_destroy_timer(Timer);
 	return 0;
 }
+
+
 
 
