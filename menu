@@ -1,0 +1,50 @@
+#include <iostream>
+
+using namespace std;
+
+void mostrar_menu() {
+    cout << "----- Menu -----" << endl;
+    cout << "1. Iniciar juego" << endl;
+    cout << "2. Cambiar velocidad de la bola" << endl;
+    cout << "3. Salir" << endl;
+    cout << "Selecciona una opción: ";
+}
+
+int main() {
+    int opcion;
+    float velocidad_x = 1.0;
+    float velocidad_y = 3.5;
+    
+    bool salir = false;
+
+    while (!salir) {
+        mostrar_menu();
+        cin >> opcion;
+
+        switch (opcion) {
+        case 1: // Iniciar juego
+            cout << "Iniciando juego..." << endl;
+            // Aquí se puede poner el código para iniciar el juego
+            break;
+        
+        case 2: // Cambiar velocidad de la bola
+            cout << "Ingresa la nueva velocidad en X: ";
+            cin >> velocidad_x;
+            cout << "Ingresa la nueva velocidad en Y: ";
+            cin >> velocidad_y;
+            cout << "Velocidades actualizadas: X=" << velocidad_x << ", Y=" << velocidad_y << endl;
+            break;
+        
+        case 3: // Salir
+            cout << "Saliendo..." << endl;
+            salir = true;
+            break;
+        
+        default:
+            cout << "Opción inválida, intenta de nuevo." << endl;
+            break;
+        }
+    }
+
+    return 0;
+}
