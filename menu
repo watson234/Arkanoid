@@ -1,50 +1,32 @@
-#include <iostream>
+#include <allegro5/allegro5.h>
+#include <allegro5/allegro_font.h>
+#include <allegro5/allegro_ttf.h>
 
-using namespace std;
+int mostrar_menu(ALLEGRO_FONT* font, ALLEGRO_DISPLAY* Pantalla, ALLEGRO_EVENT_QUEUE* Eventos) {
+    bool menu = true;
+    int seleccion = 0; // 0 para jugar, 1 para salir
+    while (menu) {
+        al_clear_to_color(al_map_rgb(0, 0, 0)); // Limpiar pantalla a negro
+        al_draw_text(font, al_map_rgb(255, 255, 255), 360, 100, ALLEGRO_ALIGN_CENTER, "ARKANOID");
+        al_draw_text(font, al_map_rgb(255, 255, 255), 360, 200, ALLEGRO_ALIGN_CENTER, seleccion == 0 ? "> Jugar" : "Jugar");
+        al_draw_text(font, al_map_rgb(255, 255, 255), 360, 250, ALLEGRO_ALIGN_CENTER, seleccion == 1 ? "> Salir" : "Salir");
+        al_flip_display();
 
-void mostrar_menu() {
-    cout << "----- Menu -----" << endl;
-    cout << "1. Iniciar juego" << endl;
-    cout << "2. Cambiar velocidad de la bola" << endl;
-    cout << "3. Salir" << endl;
-    cout << "Selecciona una opción: ";
-}
+        ALLEGRO_EVENT Evento;
+        al_wait_for_event(Eventos, &Evento);
 
-int main() {
-    int opcion;
-    float velocidad_x = 1.0;
-    float velocidad_y = 3.5;
-    
-    bool salir = false;
-
-    while (!salir) {
-        mostrar_menu();
-        cin >> opcion;
-
-        switch (opcion) {
-        case 1: // Iniciar juego
-            cout << "Iniciando juego..." << endl;
-            // Aquí se puede poner el código para iniciar el juego
-            break;
-        
-        case 2: // Cambiar velocidad de la bola
-            cout << "Ingresa la nueva velocidad en X: ";
-            cin >> velocidad_x;
-            cout << "Ingresa la nueva velocidad en Y: ";
-            cin >> velocidad_y;
-            cout << "Velocidades actualizadas: X=" << velocidad_x << ", Y=" << velocidad_y << endl;
-            break;
-        
-        case 3: // Salir
-            cout << "Saliendo..." << endl;
-            salir = true;
-            break;
-        
-        default:
-            cout << "Opción inválida, intenta de nuevo." << endl;
-            break;
+        if (Evento.type == ALLEGRO_EVENT_KEY_DOWN) {
+            if (Evento.keyboard.keycode == ALLEGRO_KEY_DOWN) {
+                seleccion = (seleccion + 1) % 2;
+            }
+            if (Evento.keyboard.keycode == ALLEGRO_KEY_UP) {
+                seleccion = (seleccion - 1 + 2) % 2;
+            }
+            if (Evento.keyboard.keycode == ALLEGRO_KEY_ENTER) {
+                return seleccion;
+            }
         }
     }
-
     return 0;
 }
+
