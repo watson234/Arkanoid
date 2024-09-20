@@ -42,6 +42,19 @@ int main()
 	al_register_event_source(Eventos, al_get_mouse_event_source());
 	al_register_event_source(Eventos, al_get_timer_event_source(Timer));
 
+	// bola
+	float ball_x = 400; // Posición inicial X
+	float ball_y = 390; // Posición inicial Y
+	float ball_radius = 10; // Radio de la bola
+	float ball_dx = 1; // Velocidad en X
+	float ball_dy = 3.5; // Velocidad en Y
+
+	//Nave
+	float nave_x = 300;
+	float nave_y = 400; 
+	float nave_width = 120;
+	float nave_height = 20;
+
 	bool juego = true;
 	bool derecha = false,izquierda=false;
 	float x = 360, y=400;
@@ -57,15 +70,33 @@ int main()
 		{
 			juego = false;
 		}
-		if (x + 200> width)
+		//movimiento de la nave
+		if (nave_x + 125> width)
 			derecha=false;
-		if (x < 0)
+		if (nave_x < 0)
 			izquierda = false;
 		if (derecha)
-			x += 2;
+			nave_x += 2;
 		if (izquierda)
-			x -= 2;
-		
+			nave_x -= 2;
+
+		ball_x += ball_dx;
+		ball_y += ball_dy;
+
+
+		if (ball_x - ball_radius < 0 || ball_x + ball_radius > 720) {
+			ball_dx *= -0.9; // Rebotar en X
+		}
+		if (ball_y - ball_radius < 0) {
+			ball_dy *= -0.9; // Rebotar en Y
+		}
+		if (ball_y + ball_radius >= nave_y && ball_y - ball_radius <= nave_y + nave_height &&
+			ball_x + ball_radius >= nave_x && ball_x - ball_radius <= nave_x + nave_width) {
+			ball_dy *= -1; // Rebotar en Y
+			ball_y = nave_y - ball_radius; // Ajustar la posición de la bola para que no se solape
+		}
+
+		//si el teclado esta presionado
 		if (Evento.type == ALLEGRO_EVENT_KEY_DOWN)
 		{
 			if (Evento.keyboard.keycode == ALLEGRO_KEY_RIGHT)
@@ -92,7 +123,8 @@ int main()
 		if (Evento.type == ALLEGRO_EVENT_TIMER)
 		{
 			al_clear_to_color(al_map_rgb(0, 0, 255));
-			al_draw_bitmap(Bitmap, x, y,0);
+			al_draw_filled_rectangle(nave_x, nave_y, nave_x + nave_width, nave_y + nave_height, al_map_rgb(255, 0, 0)); // Rectángulo verde
+			al_draw_filled_circle(ball_x, ball_y, ball_radius, al_map_rgb(255,255, 255)); // Bola roja
 			al_flip_display();
 		}
 		
@@ -105,4 +137,5 @@ int main()
 	al_destroy_timer(Timer);
 	return 0;
 }
+
 
