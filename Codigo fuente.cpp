@@ -1,4 +1,4 @@
-// Arkanoid.cpp : Este archivo contiene la función "main". La ejecución del programa comienza y termina ahí.
+ Este archivo contiene la función "main". La ejecución del programa comienza y termina ahí.
 //
 
 #include <iostream>
@@ -13,7 +13,7 @@
 
 #define FPS 60.0
 #define FPS2 30.0
-int level = 1;
+
 
 using namespace std;
 
@@ -30,7 +30,7 @@ typedef struct Bloques
 
 Blocks CrearBloque(float pos_x,float pos_y,float tamaño,float altura,bool rom,int gol)
 {
-	Blocks bloque = new Bloques;
+	Blocks bloque = new (Bloques);
 	bloque->x = pos_x;
 	bloque->y = pos_y;
 	bloque->width = tamaño;
@@ -91,6 +91,7 @@ void nivel(Blocks& lista, int nivel)
 }
 int main()
 {
+	int level = 1;
 	Blocks lista;
 	lista = NULL;
 	if (!al_init()) {
@@ -233,5 +234,3 @@ int main()
 	al_destroy_timer(Timer);
 	return 0;
 }
-
-
