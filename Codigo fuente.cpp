@@ -87,6 +87,24 @@ void nivel(Blocks& lista, int nivel)
 			}
 		}
 		break;
+	case 2:
+		for (int fila = 0; fila < 5; fila++)
+		{
+			for (int i = 0; i < 18; i++)
+			{
+				if (i < 4 && fila % 2 != 0)
+				{
+					nuevo = CrearBloque((width * i), (height * fila), width, height, true, 2);
+					agregarFinal(lista, nuevo);
+				}
+				else
+				{
+				nuevo = CrearBloque((width * i), (height * fila), width, height, true, 1);
+				agregarFinal(lista, nuevo);
+				}
+				
+			}
+		}
 	}
 
 }
@@ -94,9 +112,18 @@ void eliminarBloque(Blocks& lista, Blocks bloque)
 {
 	Blocks Aux;
 	Aux = lista;
+	if (bloque == NULL)
+		return;
+	if (lista == bloque)
+	{
+		lista = lista->Sig;
+		delete bloque;
+		return;
+	}
 	bool encontro = false;
 	while (!encontro)
 	{
+		
 		if (Aux->Sig == bloque)
 		{
 		encontro = true;
@@ -161,7 +188,10 @@ int main()
 	Blocks Aux;
 	while (juego)
 	{
+		std::cout << "Nivel actual: " << level << std::endl;
+		std::cout << "Lista no nula: " << (lista != NULL) << std::endl;
 		Aux = lista;
+		
 		ALLEGRO_EVENT Evento;
 		al_wait_for_event(Eventos, &Evento);
 		//si se cierraa la ventana
@@ -259,6 +289,11 @@ int main()
 			al_draw_filled_rectangle(nave_x, nave_y, nave_x + nave_width, nave_y + nave_height, al_map_rgb(255, 0, 0)); // Rectángulo verde
 			al_draw_filled_circle(ball_x, ball_y, ball_radius, al_map_rgb(255, 255, 255)); // Bola roja
 			al_flip_display();//se actualiza la pantalla
+			if (lista == NULL)//genera error ya que no se finaliza el nivel, no corregido
+			{
+				level++;
+				nivel(lista, level);
+			}
 		}
 		
 		
@@ -270,6 +305,11 @@ int main()
 	al_uninstall_keyboard();
 	al_uninstall_mouse();
 	al_destroy_bitmap(Bitmap);
+	al_destroy_timer(Timer);
+	return 0;
+}
+
+
 	al_destroy_timer(Timer);
 	return 0;
 }
