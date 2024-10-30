@@ -21,11 +21,17 @@
 
 using namespace std;
 
+typedef struct Boton {
+	float x, y;               
+	float width, height;     
+	const char* texto;        
+	ALLEGRO_COLOR color;      
+	ALLEGRO_COLOR colorTexto; 
+} Boton;
+
 typedef struct Bloques
 {
 	float x;
-
-
 	float y;
 	float width;
 	float height;
@@ -173,6 +179,7 @@ bool verificar(Blocks &lista)
 	}
 	return false;
 }
+
 int main()
 {
 	
@@ -240,7 +247,10 @@ int main()
 	string mensaje = "NA";
 
 	//recursos del ciclo
+	int seleccion=0;
+	bool menu = true;
 	bool juego = true;
+	bool juego2 = true;
 	bool derecha = false, izquierda = false;
 	float x = 360, y = 400;
 	int width = al_get_display_width(Pantalla);
@@ -248,157 +258,201 @@ int main()
 	nivel(lista, level);
 
 	Blocks Aux;
-	while (juego)
+	while (juego2)
 	{
-		
-		Aux = lista;
-		
-		ALLEGRO_EVENT Evento;
-		al_wait_for_event(Eventos, &Evento);
-		//si se cierraa la ventana
-		if (Evento.type == ALLEGRO_EVENT_DISPLAY_CLOSE)
-		{
-			juego = false;
-		}
-		//movimiento de la nave
-		if (nave_x + 125 > 720)
-			derecha = false;
-		if (nave_x < 0)
-			izquierda = false;
-		if (derecha)
-			nave_x += 2.5;
-		if (izquierda)
-			nave_x -= 2.5;
-
-		//bola y sus movimientos
-		ball_x += ball_dx;
-		ball_y += ball_dy;
-		if (ball_y >= 480 - ball_radius)
-		{
-			ball_x = 360;
-			ball_y = 200;
-			vidas --;
-		}
-		
-	
-		
-		if (ball_x <= ball_radius + 0 || ball_x >= 720 - ball_radius)
-			ball_dx *= -1;
-		if (ball_y <= ball_radius + 0)
-			ball_dy *= -1;
-
-		ball_x = min(ball_x, 720 - ball_radius);
-		ball_x = max(ball_x, ball_radius);
-		ball_y = max(ball_y, ball_radius);
-		//todavia hay errores 
-
-
-		if (ball_y + ball_radius >= nave_y && ball_y - ball_radius <= nave_y + nave_height &&
-			ball_x + ball_radius >= nave_x && ball_x - ball_radius <= nave_x + nave_width) {
-			ball_dy *= -1; // Rebotar en Y
-			ball_y = nave_y - ball_radius; // Ajustar la posición de la bola para que no se solape
-		}
-		
-		//si el teclado esta presionado
-		if (Evento.type == ALLEGRO_EVENT_KEY_DOWN)
-		{
-			if (Evento.keyboard.keycode == ALLEGRO_KEY_RIGHT)
-			{
-				derecha = true;
-			}
-			if (Evento.keyboard.keycode == ALLEGRO_KEY_LEFT)
-			{
-				izquierda = true;
-			}
-		}
-		// si el teclado ya no esta presionado
-		if (Evento.type == ALLEGRO_EVENT_KEY_UP)
-		{
-			if (Evento.keyboard.keycode == ALLEGRO_KEY_RIGHT)
-			{
-				derecha = false;
-			}
-			if (Evento.keyboard.keycode == ALLEGRO_KEY_LEFT)
-			{
-				izquierda = false;
-			}
-		}
-		//colisiones bola y bloques
-		if (Aux != NULL)
-		{
-			while (Aux != NULL)//mientras no se haya llegado al final de lista se dibujan los bloques 
-			{
-				if (ball_y + ball_radius >= Aux->y && ball_y - ball_radius <= Aux->y + Aux->height &&
-					ball_x + ball_radius >= Aux->x && ball_x - ball_radius <= Aux->x + Aux->width) {
-					ball_dy *= -1; // Rebotar en Y
-					al_play_sample(choque, 100.0, 0.5, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
-					Aux->golpes--;
-					cout << Aux->golpes << endl;
-					if (Aux->golpes <= 0 && Aux->rompe)
-					{
-						eliminarBloque(lista, Aux);
-						puntos += 100;
-					}
-					break;
-				}
-				Aux = Aux->Sig;
-			}
-		}
-		Aux = lista;
-		//si a pasado el tiempo entonces se hacen las acciones
-		if (Evento.type == ALLEGRO_EVENT_TIMER)
-		{
-			
-			al_clear_to_color(al_map_rgb(0, 0, 255));
-			while (Aux != NULL)//mientras no se haya llegado al final de lista se dibujan los bloques 
-			{
-				al_draw_filled_rectangle(Aux->x, Aux->y, Aux->x + Aux->width, Aux->y + Aux->height, al_map_rgb(Aux->ColorR, Aux->ColorG, Aux->ColorB));
-				Aux = Aux->Sig;
-			}
-			al_draw_filled_rectangle(nave_x, nave_y, nave_x + nave_width, nave_y + nave_height, al_map_rgb(255, 0, 0)); // Rectángulo verde
-			al_draw_filled_rectangle(720, 0, 960, 540, al_map_rgb(0, 0, 0));
-			al_draw_filled_circle(ball_x, ball_y, ball_radius, al_map_rgb(255, 255, 255)); // Bola roja
-
-			al_draw_textf(font, al_map_rgb(255, 255, 255), 750, 100, ALLEGRO_ALIGN_LEFT, "Nivel: %d", level);
-			al_draw_textf(font, al_map_rgb(255, 255, 255), 750, 200, ALLEGRO_ALIGN_LEFT, "Vidas: %d", vidas);
-			al_draw_textf(font, al_map_rgb(255, 255, 255), 750, 300, ALLEGRO_ALIGN_LEFT, "Puntos: %d", puntos);
-			al_flip_display();//se actualiza la pantalla
-			
-			
-			if (lista == NULL or !verificar(lista)) {
-				level++;
-				if (level > 4) { // Verificar si se ha ganado
-					mensaje = "Gano el juego";
-					mostrar = true;
-					juego = false; // Salir del juego
-				}
-				else {
-					nivel(lista, level);
-					ball_y = 200;
-					ball_x = 400; // Reiniciar la posición de la bola
-				}
-			}
-			if (vidas <= 0)
-			{
-				mostrar = true;
-				mensaje = "Perdio";
-				juego = false; // Salir del juego
-			}
-			
-		}
-		if (mostrar) {
-			al_clear_to_color(al_map_rgb(0, 0, 0)); // Fondo negro
-			al_draw_text(font2, al_map_rgb(250, 255, 255), 400, 200, ALLEGRO_ALIGN_LEFT, mensaje.c_str());
+		while (menu) {
+			al_clear_to_color(al_map_rgb(0, 0, 0)); // Limpiar pantalla a negro
+			al_draw_text(font, al_map_rgb(255, 255, 255), 360, 100, ALLEGRO_ALIGN_CENTER, "ARKANOID");
+			al_draw_text(font, al_map_rgb(255, 255, 255), 360, 200, ALLEGRO_ALIGN_CENTER, seleccion == 0 ? "> Jugar" : "Jugar");
+			al_draw_text(font, al_map_rgb(255, 255, 255), 360, 250, ALLEGRO_ALIGN_CENTER, seleccion == 1 ? "> Salir" : "Salir");
 			al_flip_display();
-			al_rest(3.0); // Pausa de 3 segundos
-			mostrar = false; // Evita que el mensaje se muestre más de una vez
-		}
-		
-		
-		
 
+			ALLEGRO_EVENT Evento;
+			al_wait_for_event(Eventos, &Evento);
+			if (Evento.type == ALLEGRO_EVENT_DISPLAY_CLOSE)
+			{
+				juego2 = false;
+			}
+			if (Evento.type == ALLEGRO_EVENT_KEY_DOWN) {
+				if (Evento.keyboard.keycode == ALLEGRO_KEY_DOWN) {
+					seleccion = (seleccion + 1) % 2;
+				}
+				if (Evento.keyboard.keycode == ALLEGRO_KEY_UP) {
+					seleccion = (seleccion - 1 + 2) % 2;
+				}
+				if (Evento.keyboard.keycode == ALLEGRO_KEY_ENTER) {
+					if (seleccion == 0)
+					{
+
+						menu = false;
+						juego = true;
+					}
+					else
+					{
+						menu = false; 
+						juego = false; 
+						juego2 = false;
+					}
+				}
+			}
+		}
+
+		while (juego)
+		{
+
+			Aux = lista;
+
+			ALLEGRO_EVENT Evento;
+			al_wait_for_event(Eventos, &Evento);
+			//si se cierraa la ventana
+			if (Evento.type == ALLEGRO_EVENT_DISPLAY_CLOSE)
+			{
+				juego = false;
+			}
+			//movimiento de la nave
+			if (nave_x + 125 > 720)
+				derecha = false;
+			if (nave_x < 0)
+				izquierda = false;
+			if (derecha)
+				nave_x += 2.5;
+			if (izquierda)
+				nave_x -= 2.5;
+
+			//bola y sus movimientos
+			ball_x += ball_dx;
+			ball_y += ball_dy;
+			if (ball_y >= 480 - ball_radius)
+			{
+				ball_x = 360;
+				ball_y = 200;
+				vidas--;
+			}
+
+
+
+			if (ball_x <= ball_radius + 0 || ball_x >= 720 - ball_radius)
+				ball_dx *= -1;
+			if (ball_y <= ball_radius + 0)
+				ball_dy *= -1;
+
+			ball_x = min(ball_x, 720 - ball_radius);
+			ball_x = max(ball_x, ball_radius);
+			ball_y = max(ball_y, ball_radius);
+			//todavia hay errores 
+
+
+			if (ball_y + ball_radius >= nave_y && ball_y - ball_radius <= nave_y + nave_height &&
+				ball_x + ball_radius >= nave_x && ball_x - ball_radius <= nave_x + nave_width) {
+				ball_dy *= -1; // Rebotar en Y
+				ball_y = nave_y - ball_radius; // Ajustar la posición de la bola para que no se solape
+			}
+
+			//si el teclado esta presionado
+			if (Evento.type == ALLEGRO_EVENT_KEY_DOWN)
+			{
+				if (Evento.keyboard.keycode == ALLEGRO_KEY_RIGHT)
+				{
+					derecha = true;
+				}
+				if (Evento.keyboard.keycode == ALLEGRO_KEY_LEFT)
+				{
+					izquierda = true;
+				}
+			}
+			// si el teclado ya no esta presionado
+			if (Evento.type == ALLEGRO_EVENT_KEY_UP)
+			{
+				if (Evento.keyboard.keycode == ALLEGRO_KEY_RIGHT)
+				{
+					derecha = false;
+				}
+				if (Evento.keyboard.keycode == ALLEGRO_KEY_LEFT)
+				{
+					izquierda = false;
+				}
+			}
+			//colisiones bola y bloques
+			if (Aux != NULL)
+			{
+				while (Aux != NULL)//mientras no se haya llegado al final de lista se dibujan los bloques 
+				{
+					if (ball_y + ball_radius >= Aux->y && ball_y - ball_radius <= Aux->y + Aux->height &&
+						ball_x + ball_radius >= Aux->x && ball_x - ball_radius <= Aux->x + Aux->width) {
+						ball_dy *= -1; // Rebotar en Y
+						al_play_sample(choque, 100.0, 0.5, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
+						Aux->golpes--;
+						cout << Aux->golpes << endl;
+						if (Aux->golpes <= 0 && Aux->rompe)
+						{
+							eliminarBloque(lista, Aux);
+							puntos += 100;
+						}
+						break;
+					}
+					Aux = Aux->Sig;
+				}
+			}
+			Aux = lista;
+			//si a pasado el tiempo entonces se hacen las acciones
+			if (Evento.type == ALLEGRO_EVENT_TIMER)
+			{
+
+				al_clear_to_color(al_map_rgb(0, 0, 255));
+				while (Aux != NULL)//mientras no se haya llegado al final de lista se dibujan los bloques 
+				{
+					al_draw_filled_rectangle(Aux->x, Aux->y, Aux->x + Aux->width, Aux->y + Aux->height, al_map_rgb(Aux->ColorR, Aux->ColorG, Aux->ColorB));
+					Aux = Aux->Sig;
+				}
+				al_draw_filled_rectangle(nave_x, nave_y, nave_x + nave_width, nave_y + nave_height, al_map_rgb(255, 0, 0)); // Rectángulo verde
+				al_draw_filled_rectangle(720, 0, 960, 540, al_map_rgb(0, 0, 0));
+				al_draw_filled_circle(ball_x, ball_y, ball_radius, al_map_rgb(255, 255, 255)); // Bola roja
+
+				al_draw_textf(font, al_map_rgb(255, 255, 255), 750, 100, ALLEGRO_ALIGN_LEFT, "Nivel: %d", level);
+				al_draw_textf(font, al_map_rgb(255, 255, 255), 750, 200, ALLEGRO_ALIGN_LEFT, "Vidas: %d", vidas);
+				al_draw_textf(font, al_map_rgb(255, 255, 255), 750, 300, ALLEGRO_ALIGN_LEFT, "Puntos: %d", puntos);
+				al_flip_display();//se actualiza la pantalla
+
+
+				if (lista == NULL or !verificar(lista)) {
+					level++;
+					if (level > 4) { // Verificar si se ha ganado
+						mensaje = "Gano el juego";
+						mostrar = true;
+						menu = true;
+						juego = false; // Salir del juego
+
+					}
+					else {
+						nivel(lista, level);
+						ball_y = 200;
+						ball_x = 400; // Reiniciar la posición de la bola
+					}
+				}
+				if (vidas <= 0)
+				{
+					mostrar = true;
+					mensaje = "Perdio";
+					menu = true;
+					juego = false; // Salir del juego
+
+				}
+
+			}
+			if (mostrar) {
+				al_clear_to_color(al_map_rgb(0, 0, 0)); // Fondo negro
+				al_draw_text(font2, al_map_rgb(250, 255, 255), 400, 200, ALLEGRO_ALIGN_LEFT, mensaje.c_str());
+				al_flip_display();
+				al_rest(3.0); // Pausa de 3 segundos
+				mostrar = false; // Evita que el mensaje se muestre más de una vez
+			}
+
+
+
+
+		}
 	}
-	//se limpia la memoria de lo usado
+		//se limpia la memoria de lo usado
 	al_destroy_display(Pantalla);
 	al_uninstall_keyboard();
 	al_uninstall_mouse();
