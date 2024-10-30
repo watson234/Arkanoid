@@ -9,8 +9,11 @@
 #include <allegro5/allegro_native_dialog.h>
 #include <allegro5/allegro_primitives.h>
 #include <allegro5/allegro_image.h>
+#include <allegro5/allegro_audio.h>
+#include <allegro5/allegro_acodec.h>
 #include <algorithm>
 #include <random>
+#include <string>
 
 #define FPS 120.0
 #define FPS2 30.0
@@ -21,6 +24,8 @@ using namespace std;
 typedef struct Bloques
 {
 	float x;
+
+
 	float y;
 	float width;
 	float height;
@@ -88,26 +93,45 @@ void nivel(Blocks& lista, int nivel)
 		}
 		break;
 	case 2:
+		
 		for (int fila = 0; fila < 5; fila++)
 		{
 			for (int i = 0; i < 18; i++)
 			{
-				if (i < 4 && fila % 2 != 0)
-				{
-					nuevo = CrearBloque((width * i), (height * fila), width, height, true, 2);
-					agregarFinal(lista, nuevo);
-				}
-				else
-				{
-				nuevo = CrearBloque((width * i), (height * fila), width, height, true, 1);
+				int golpes = rand() % 2;
+				nuevo = CrearBloque((width * i), (height * fila), width, height, true, golpes);
 				agregarFinal(lista, nuevo);
-				}
-				
 			}
 		}
+		break;
+	case 3://nuevo nivel en proceso de creación
+		int bloc = 0;
+		for (int fila = 0; fila < 5; fila++)
+		{
+			for (int i = 0; i < 18; i++)
+			{
+				bool rom = true;
+				int golpes = rand() % 3;
+				if (golpes == 3)
+				{
+					bloc++;
+					rom = false;
+				}
+				if (bloc == 10)
+				{
+					golpes = 2;
+					rom = true;
+				}
+				nuevo = CrearBloque((width * i), (height * fila), width, height, rom, golpes);
+				agregarFinal(lista, nuevo);
+			}
+		}
+		break;
+		
 	}
 
 }
+
 void eliminarBloque(Blocks& lista, Blocks bloque)
 {
 	Blocks Aux;
@@ -134,11 +158,25 @@ void eliminarBloque(Blocks& lista, Blocks bloque)
 	}
 	delete bloque;
 }
+
+bool verificar(Blocks &lista)
+{
+	Blocks aux;
+	aux = lista;
+	while (aux->Sig!=NULL)
+	{
+		if (aux->rompe)
+		{
+			return true;
+		}
+		aux = aux->Sig;
+	}
+	return false;
+}
 int main()
 {
-	int level = 1;
-	Blocks lista;
-	lista = NULL;
+	
+	
 	if (!al_init()) {
 		al_show_native_message_box(NULL, "Ventana Emergente", "Error", "No se puede inicializar Allegro", NULL, NULL);
 		return 0;
@@ -150,25 +188,39 @@ int main()
 	al_init_primitives_addon();
 	al_install_keyboard();
 	al_install_mouse();
+	al_init_acodec_addon();
+	al_install_audio();
 	//se crean punteros a funciones de allegro
-	ALLEGRO_DISPLAY* Pantalla = al_create_display(720, 480);
+	ALLEGRO_DISPLAY* Pantalla = al_create_display(960, 480);
 	ALLEGRO_EVENT_QUEUE* Eventos = al_create_event_queue();
 	ALLEGRO_TIMER* Timer = al_create_timer(1.0 / FPS);
 	ALLEGRO_BITMAP* Bitmap = NULL;
+	ALLEGRO_SAMPLE* choque;
+	ALLEGRO_FONT* font = al_load_ttf_font("Darks_Calibri_Remix.ttf", 40, NULL);
+	ALLEGRO_FONT* font2 = al_load_ttf_font("OptimusPrinceps.ttf", 60, NULL);
+
+	choque = al_load_sample("retro-coin-3-236679.mp3");
+	if (!choque) {
+		al_show_native_message_box(NULL, "Ventana Emergente","Error", "No se pudo cargar el sonido.", NULL,NULL);
+		return -1;
+	}
 	//no se usa es un ejemplo de cargar imagenes
 	Bitmap = al_load_bitmap("mapa de bits.png");
-	assert(Bitmap != NULL);
+	if (!Bitmap) {
+		std::cerr << "Error al cargar la imagen 'personaje.png'.\n";
+		return -1;
+	}
 
 	//se agrega un regostro de cada evento en eventos
 	al_register_event_source(Eventos, al_get_keyboard_event_source());
 	al_register_event_source(Eventos, al_get_display_event_source(Pantalla));
 	al_register_event_source(Eventos, al_get_mouse_event_source());
 	al_register_event_source(Eventos, al_get_timer_event_source(Timer));
-
+	
 	// bola
-	float ball_x = 400; // Posición inicial X
-	float ball_y = 390; // Posición inicial Y
-	float ball_radius = 7; // Radio de la bola
+	float ball_x = 400; 
+	float ball_y = 200;
+	float ball_radius = 7; 
 	float ball_dx = 1; // Velocidad en X
 	float ball_dy = 3; // Velocidad en Y
 
@@ -178,6 +230,16 @@ int main()
 	float nave_width = 120;
 	float nave_height = 20;
 
+	//recursos del juego
+	int vidas=3;
+	int puntos = 0;
+	int level = 1;
+	Blocks lista;
+	lista = NULL;
+	bool mostrar = false;
+	string mensaje = "NA";
+
+	//recursos del ciclo
 	bool juego = true;
 	bool derecha = false, izquierda = false;
 	float x = 360, y = 400;
@@ -188,8 +250,7 @@ int main()
 	Blocks Aux;
 	while (juego)
 	{
-		std::cout << "Nivel actual: " << level << std::endl;
-		std::cout << "Lista no nula: " << (lista != NULL) << std::endl;
+		
 		Aux = lista;
 		
 		ALLEGRO_EVENT Evento;
@@ -200,7 +261,7 @@ int main()
 			juego = false;
 		}
 		//movimiento de la nave
-		if (nave_x + 125 > width)
+		if (nave_x + 125 > 720)
 			derecha = false;
 		if (nave_x < 0)
 			izquierda = false;
@@ -214,10 +275,13 @@ int main()
 		ball_y += ball_dy;
 		if (ball_y >= 480 - ball_radius)
 		{
-
 			ball_x = 360;
-			ball_y = 400;
+			ball_y = 200;
+			vidas --;
 		}
+		
+	
+		
 		if (ball_x <= ball_radius + 0 || ball_x >= 720 - ball_radius)
 			ball_dx *= -1;
 		if (ball_y <= ball_radius + 0)
@@ -267,10 +331,14 @@ int main()
 				if (ball_y + ball_radius >= Aux->y && ball_y - ball_radius <= Aux->y + Aux->height &&
 					ball_x + ball_radius >= Aux->x && ball_x - ball_radius <= Aux->x + Aux->width) {
 					ball_dy *= -1; // Rebotar en Y
-
+					al_play_sample(choque, 100.0, 0.5, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
 					Aux->golpes--;
-					if (Aux->golpes == 0)
+					cout << Aux->golpes << endl;
+					if (Aux->golpes <= 0 && Aux->rompe)
+					{
 						eliminarBloque(lista, Aux);
+						puntos += 100;
+					}
 					break;
 				}
 				Aux = Aux->Sig;
@@ -280,20 +348,50 @@ int main()
 		//si a pasado el tiempo entonces se hacen las acciones
 		if (Evento.type == ALLEGRO_EVENT_TIMER)
 		{
-			al_clear_to_color(al_map_rgb(0, 0, 255));;
+			
+			al_clear_to_color(al_map_rgb(0, 0, 255));
 			while (Aux != NULL)//mientras no se haya llegado al final de lista se dibujan los bloques 
 			{
 				al_draw_filled_rectangle(Aux->x, Aux->y, Aux->x + Aux->width, Aux->y + Aux->height, al_map_rgb(Aux->ColorR, Aux->ColorG, Aux->ColorB));
 				Aux = Aux->Sig;
 			}
 			al_draw_filled_rectangle(nave_x, nave_y, nave_x + nave_width, nave_y + nave_height, al_map_rgb(255, 0, 0)); // Rectángulo verde
+			al_draw_filled_rectangle(720, 0, 960, 540, al_map_rgb(0, 0, 0));
 			al_draw_filled_circle(ball_x, ball_y, ball_radius, al_map_rgb(255, 255, 255)); // Bola roja
+
+			al_draw_textf(font, al_map_rgb(255, 255, 255), 750, 100, ALLEGRO_ALIGN_LEFT, "Nivel: %d", level);
+			al_draw_textf(font, al_map_rgb(255, 255, 255), 750, 200, ALLEGRO_ALIGN_LEFT, "Vidas: %d", vidas);
+			al_draw_textf(font, al_map_rgb(255, 255, 255), 750, 300, ALLEGRO_ALIGN_LEFT, "Puntos: %d", puntos);
 			al_flip_display();//se actualiza la pantalla
-			if (lista == NULL)//genera error ya que no se finaliza el nivel, no corregido
-			{
+			
+			
+			if (lista == NULL or !verificar(lista)) {
 				level++;
-				nivel(lista, level);
+				if (level > 4) { // Verificar si se ha ganado
+					mensaje = "Gano el juego";
+					mostrar = true;
+					juego = false; // Salir del juego
+				}
+				else {
+					nivel(lista, level);
+					ball_y = 200;
+					ball_x = 400; // Reiniciar la posición de la bola
+				}
 			}
+			if (vidas <= 0)
+			{
+				mostrar = true;
+				mensaje = "Perdio";
+				juego = false; // Salir del juego
+			}
+			
+		}
+		if (mostrar) {
+			al_clear_to_color(al_map_rgb(0, 0, 0)); // Fondo negro
+			al_draw_text(font2, al_map_rgb(250, 255, 255), 400, 200, ALLEGRO_ALIGN_LEFT, mensaje.c_str());
+			al_flip_display();
+			al_rest(3.0); // Pausa de 3 segundos
+			mostrar = false; // Evita que el mensaje se muestre más de una vez
 		}
 		
 		
@@ -305,11 +403,6 @@ int main()
 	al_uninstall_keyboard();
 	al_uninstall_mouse();
 	al_destroy_bitmap(Bitmap);
-	al_destroy_timer(Timer);
-	return 0;
-}
-
-
 	al_destroy_timer(Timer);
 	return 0;
 }
